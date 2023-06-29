@@ -47,6 +47,14 @@ export class UsersService {
     });
   }
 
+	async findByEmail(email: string): Promise<User> {
+    return await this.prismaService.user.findFirst({
+      where: {
+        email: email,
+      },
+    });
+  }
+
   async findOneByUserId(userId: number): Promise<Password> {
     return await this.prismaService.password.findUnique({
       where: {

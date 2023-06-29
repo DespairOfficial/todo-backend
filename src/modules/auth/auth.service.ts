@@ -20,7 +20,8 @@ import { Tokens } from '../../interfaces/Tokens.interface';
 import { User } from '@prisma/client';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { refreshTokenOptions } from '../../config/jwtOptions';
-import { createHmac } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
+import { EMAIL_EXISTS } from '../../config/constants';
 
 @Injectable()
 export class AuthService {
@@ -83,7 +84,7 @@ export class AuthService {
       registerUserDto.email,
     );
     if (candidate) {
-      throw new BadRequestException('User with this email already exists');
+      throw new BadRequestException(EMAIL_EXISTS);
     }
 
     const isVerified =
@@ -143,9 +144,15 @@ export class AuthService {
   }
 
   async sendEmailVerificationCode(sendEmailCodeDto: SendEmailCodeDto) {
-    const code = createHmac('sha256', process.env.SECRET_FOR_HASH)
-      .update(`${new Date()}${sendEmailCodeDto.email}`)
-      .digest('hex');
+    const user = await this.usersService.findByEmail(sendEmailCodeDto.email);
+
+    if (user) {
+      throw new BadRequestException(EMAIL_EXISTS);
+    }
+
+    const codeBuffer = randomBytes(5);
+    const code = codeBuffer.toString('hex');
+
     const genedatedCode =
       await this.verificationService.setEmailVerificationCode(
         sendEmailCodeDto.email,

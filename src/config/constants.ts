@@ -33,3 +33,5 @@ export const REQUEST_WAS_SEND = 'Request was already send';
 export const DEVELOPMENT_FILES = 'You can not upload files in DEVELOPMENT mode';
 
 export const EMPTY_PRODUCTS = 'Products array cannot be empty';
+
+export const EMAIL_EXISTS = 'User with this email already exists';

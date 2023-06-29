@@ -10,13 +10,12 @@ export class RegisterUserDto {
   @IsEmail({}, { message: 'Must be email' })
   email: string;
 
-
-	@ApiProperty({
+  @ApiProperty({
     example: '7asg9dfyvs9f81obuf0',
     description: 'Code from mail',
   })
-	@IsString()
-	emailVerificationCode: string
+  @IsString()
+  emailVerificationCode: string;
 
   @ApiProperty({
     type: 'string',

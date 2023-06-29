@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Get,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -73,16 +74,14 @@ export class AuthController {
     return { user: authData.user, accessToken: authData.tokens.accessToken };
   }
 
-	@ApiOperation({ summary: 'Log in' })
+  @ApiOperation({ summary: 'Log in' })
   @ApiResponse({
     status: 201,
   })
   @Post('emailVerification')
-  async emailVerification(
-    @Body() sendEmailCodeDto: SendEmailCodeDto,
-  ) {
-    await this.authService.sendEmailVerificationCode(sendEmailCodeDto)
-		return 'Code was sended'
+  async emailVerification(@Body() sendEmailCodeDto: SendEmailCodeDto) {
+    await this.authService.sendEmailVerificationCode(sendEmailCodeDto);
+    return 'Code was sended';
   }
 
   @ApiOperation({ summary: 'Sign Up/Registration ' })
@@ -162,6 +161,11 @@ export class AuthController {
       fingerprint: request.get('fingerprint'),
     };
     const cookies = request.cookies;
+
+    if (!cookies) {
+      throw new UnauthorizedException('Cookies not set');
+    }
+
     const refreshToken: Token = cookies.refreshToken;
 
     const tokens: Tokens = await this.authService.refresh(

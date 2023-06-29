@@ -1,3 +1,4 @@
+import { PaginateTodosDto } from './dto/paginate-todos.dto';
 import { PrismaService } from './../database/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -17,12 +18,44 @@ export class TodosService {
     return await this.prismaService.task.findMany();
   }
 
-  async findByUser(userId: User['id']) {
-    return await this.prismaService.task.findMany({
-      where: {
-        userId,
-      },
+  async paginate(userId: User['id'], paginateTodosDto: PaginateTodosDto) {
+    const key = paginateTodosDto.orderBy;
+    const direction = paginateTodosDto.direction;
+    // need a typings here
+    const orderObject = {};
+    const whereObject = {};
+    orderObject[key] = direction;
+    whereObject['userId'] = userId;
+
+    const count = await this.prismaService.task.count({
+      where: whereObject,
     });
+
+    const body = await this.prismaService.task.findMany({
+      skip: +paginateTodosDto.limit * (paginateTodosDto.page - 1),
+      take: +paginateTodosDto.limit,
+      orderBy: orderObject,
+      where: whereObject,
+    });
+
+    const last =
+      Math.ceil(count / paginateTodosDto.limit) === 0
+        ? 1
+        : Math.ceil(count / paginateTodosDto.limit);
+
+    return {
+      meta: {
+        total: count,
+        first: 1,
+        previous:
+          paginateTodosDto.page !== 1 ? paginateTodosDto.page - 1 : null,
+        current: paginateTodosDto.page,
+        next: paginateTodosDto.page !== last ? paginateTodosDto.page + 1 : null,
+        last,
+        limit: paginateTodosDto.limit,
+      },
+      body,
+    };
   }
 
   async findOne(id: number) {
@@ -38,7 +71,11 @@ export class TodosService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} todo`;
+  async remove(id: number) {
+    return await this.prismaService.task.delete({
+      where: {
+        id,
+      },
+    });
   }
 }

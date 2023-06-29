@@ -13,6 +13,7 @@ import {
   Put,
   ParseIntPipe,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -23,6 +24,7 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { Request } from 'express';
+import { PaginateTodosDto } from './dto/paginate-todos.dto';
 
 @Controller('todos')
 @UseGuards(JwtAuthGuard)
@@ -43,8 +45,11 @@ export class TodosController {
     type: [TodoEntity],
   })
   @Get()
-  findForCurrentUser(@Req() requst: Request) {
-    return this.todosService.findByUser(requst.user.id);
+  findForCurrentUser(
+    @Req() requst: Request,
+    @Query() paginateTodosDto: PaginateTodosDto,
+  ) {
+    return this.todosService.paginate(requst.user.id, paginateTodosDto);
   }
 
   @Get(':id')
@@ -52,7 +57,7 @@ export class TodosController {
     return this.todosService.findOne(+id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Req() requst: Request,
@@ -66,7 +71,11 @@ export class TodosController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() requst: Request) {
+    const task = await this.todosService.findOne(id);
+    if (task.userId !== requst.user.id) {
+      throw new ForbiddenException('You cannot perform this aciton!');
+    }
     return this.todosService.remove(+id);
   }
 }
